@@ -9,7 +9,7 @@ include(UseJava)
 
 # As of CMake version 3.21 the documentation of find_jar is a bit poor. It does not 
 # state that the jar-extension must be omitted when searching for jar-file. So the
-# part 'NAMES umlet.jar' would not find the given jar, but 'NAMES umlet' would.
+# part 'NAMES umlet.jar' would not find the given jar, but 'NAMES umlet' does.
 #
 find_jar(path_to_umlet_jar NAMES umlet PATHS ENV "PATH")
 if (${path_to_umlet_jar} STREQUAL "path_to_umlet_jar-NOTFOUND")
