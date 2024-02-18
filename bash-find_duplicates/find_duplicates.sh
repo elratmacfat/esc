@@ -16,9 +16,7 @@ IFS=$IFS_newline_only
 declare -A possible_duplicates
 declare -A actual_duplicates
 
-echo "----------------------------------------------------"
-echo "Partially calculating MD5 checksums for all files..."
-echo "----------------------------------------------------"
+echo "=== stage 1 - taking partial fingerprints  ==="
 
 for file in $(find . -iname "*.txt" -or -iname "*.md")
 do
@@ -39,10 +37,7 @@ do
 	possible_duplicates[$partial_checksum]+="${delimiter}${file}"
 done
 
-
-echo "--------------------------------------------------------"
-echo "Calculating MD5 checksums for all possible duplicates..."
-echo "--------------------------------------------------------"
+echo "=== stage 2 - taking full fingerprints of possible duplicates ==="
 
 for key in "${!possible_duplicates[@]}"
 do
@@ -71,20 +66,26 @@ do
 	fi
 done
 
-echo "-------"
-echo "Results"
-echo "-------"
+echo "=== stage 3 - removing false positives ==="
 
 for key in "${!actual_duplicates[@]}"
 do
 	number_of_actual_duplicates=0
 	for dummy in ${actual_duplicates[$key]}; do ((++number_of_actual_duplicates)); done
-	if [[ $number_of_actual_duplicates -gt 1 ]]
+	if [[ $number_of_actual_duplicates -eq 1 ]]
 	then
-		echo "$key: $number_of_actual_duplicates"
-		for file in ${actual_duplicates[$key]};
-		do
-			echo "    $file"
-		done
+		echo "    ${actual_duplicates[$key]} is unique."
+		unset actual_duplicates[$key]
 	fi
+done
+
+echo "=== stage 4 ==="
+
+for key in "${!actual_duplicates[@]}"
+do
+	echo $key
+	for file in ${actual_duplicates[$key]};
+	do
+		echo "    $file"
+	done
 done
