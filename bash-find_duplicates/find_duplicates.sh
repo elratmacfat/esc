@@ -4,7 +4,9 @@
 #
 # Finds duplicate files across multiple subdirectories. 
 #
-# The approached solution and the dimensions of its parameter are chosen for an image collection, which
+# ---------------------------------------------------------------------------------------------------------
+#
+# The approached solution and the dimensions of its parameters are chosen for an image collection, which
 # has grown for years. Thousands of jpg-images have piled up and have been copied around in most chaotic 
 # ways.
 #
@@ -18,6 +20,7 @@
 # these pre-filtered files, the full fingerprint is generated. Files with the same full fingerprint go
 # into the same bucket. In the end those buckets are kept that contain more than one file.
 #
+# ---------------------------------------------------------------------------------------------------------
 
 # The default 'internal field separator' (IFS) yields space, tab and newline. The filenames this
 # script is going to deal with could possibly contain spaces. Concatenating multiple filenames
@@ -36,15 +39,19 @@ echo "=== stage 1 - taking partial fingerprints  ==="
 
 for file in $(find . -iname "*.txt" -or -iname "*.md")
 do
-	# md5sum produces a string starting with the 32 byte wide MD5 sum followed
-	# by some additional information, separated by spaces
+	# The program 'md5sum' produces the 32 byte checksum plus additional output. The output
+	# is interpreted as the values of an indexed array. The spaces/tabs act as delimiter.
+	# That's why the default IFS value is restored.
 	#
+	# The variable 'checksum' is an array where the first element is the MD5 checksum.
+	# The first element of an array can be used without explicitly using the subscript [0].
+	# 
 	IFS=$IFS_backup
 	checksum=($(dd status=none if="${file}" bs=100 count=1 | md5sum))
 	IFS=$IFS_newline_only
 
-	# Append current filename. If it is the first filename to be mapped
-	# to the partial checksum the delimiter is omitted.
+	# Put the file (or rather the filename) into the bucket that is identified by its partial
+	# fingerprint. Add delimiter only if the bucket already has items in it.
 	#
 	unset delimiter
 	if [[ ${partial_fingerprints[$checksum]} ]]; then 
@@ -53,13 +60,18 @@ do
 	partial_fingerprints[$checksum]+="${delimiter}${file}"
 done
 
+# todo: Remove buckets with only one element here.
+#
+
 echo "=== stage 2 - taking full fingerprints of possible duplicates ==="
 
 for key in "${!partial_fingerprints[@]}"
 do
+	# todo: There's got to be less nasty way...
 	number_of_possible_duplicates=0
 	for dummy in ${partial_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
 
+	# todo: Don't ask
 	if [[ $number_of_possible_duplicates -gt 1 ]]
 	then
 		#echo "$key: $number_of_possible_duplicates"
