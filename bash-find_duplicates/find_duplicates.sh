@@ -1,8 +1,5 @@
 #!/bin/bash
 
-
-files=$(find . -iname "*.txt" -or -iname "*.md")
-
 # A white-space must not be interpreted as delimiting character,
 # because there could be files and directories containing spaces.
 # We're assuming here that there are no new-line characters
@@ -23,8 +20,8 @@ echo "----------------------------------------------------"
 echo "Partially calculating MD5 checksums for all files..."
 echo "----------------------------------------------------"
 
-for file in $files; do
-
+for file in $(find . -iname "*.txt" -or -iname "*.md")
+do
 	# md5sum produces a string starting with the 32 byte wide MD5 sum followed
 	# by some additional information, separated by spaces
 	#
