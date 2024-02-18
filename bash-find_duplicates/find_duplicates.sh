@@ -29,8 +29,8 @@ IFS=$IFS_newline_only
 
 # Definition of associative arrays, that will be used to map filenames to MD5 checksums.
 #
-declare -A possible_duplicates
-declare -A actual_duplicates
+declare -A partial_fingerprints
+declare -A full_fingerprints
 
 echo "=== stage 1 - taking partial fingerprints  ==="
 
@@ -40,68 +40,71 @@ do
 	# by some additional information, separated by spaces
 	#
 	IFS=$IFS_backup
-	partial_checksum=($(dd status=none if="${file}" bs=100 count=1 | md5sum))
+	checksum=($(dd status=none if="${file}" bs=100 count=1 | md5sum))
 	IFS=$IFS_newline_only
 
 	# Append current filename. If it is the first filename to be mapped
 	# to the partial checksum the delimiter is omitted.
 	#
 	unset delimiter
-	if [[ ${possible_duplicates[$partial_checksum]} ]]; then 
+	if [[ ${partial_fingerprints[$checksum]} ]]; then 
 		delimiter=${IFS};
 	fi
-	possible_duplicates[$partial_checksum]+="${delimiter}${file}"
+	partial_fingerprints[$checksum]+="${delimiter}${file}"
 done
 
 echo "=== stage 2 - taking full fingerprints of possible duplicates ==="
 
-for key in "${!possible_duplicates[@]}"
+for key in "${!partial_fingerprints[@]}"
 do
 	number_of_possible_duplicates=0
-	for dummy in ${possible_duplicates[$key]}; do ((++number_of_possible_duplicates)); done
+	for dummy in ${partial_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
 
 	if [[ $number_of_possible_duplicates -gt 1 ]]
 	then
 		#echo "$key: $number_of_possible_duplicates"
 		
-		for file in ${possible_duplicates[$key]};
+		for file in ${partial_fingerprints[$key]};
 		do
 			IFS=$IFS_backup
-			full_checksum=($(md5sum "$file"))
+			checksum=($(md5sum "$file"))
 			IFS=$IFS_newline_only
 
-			echo "    $full_checksum : $file"
+			echo "    $checksum : $file"
 
 
 			unset delimiter
-			if [[ ${actual_duplicates[$full_checksum]} ]]; then 
+			if [[ ${full_fingerprints[$checksum]} ]]; then 
 				delimiter=${IFS};
 			fi
-			actual_duplicates[$full_checksum]+="${delimiter}${file}"
+			full_fingerprints[$checksum]+="${delimiter}${file}"
 		done
 	fi
 done
 
 echo "=== stage 3 - removing false positives ==="
 
-for key in "${!actual_duplicates[@]}"
+for key in "${!full_fingerprints[@]}"
 do
-	number_of_actual_duplicates=0
-	for dummy in ${actual_duplicates[$key]}; do ((++number_of_actual_duplicates)); done
-	if [[ $number_of_actual_duplicates -eq 1 ]]
+	number_of_possible_duplicates=0
+	for dummy in ${full_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
+	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
-		echo "    ${actual_duplicates[$key]} is unique."
-		unset actual_duplicates[$key]
+		echo "    ${full_fingerprints[$key]} is unique."
+		unset full_fingerprints[$key]
 	fi
 done
 
 echo "=== stage 4 ==="
 
-for key in "${!actual_duplicates[@]}"
+for key in "${!full_fingerprints[@]}"
 do
 	echo $key
-	for file in ${actual_duplicates[$key]};
+	for file in ${full_fingerprints[$key]};
 	do
 		echo "    $file"
 	done
-	done
+done
+
+
+
