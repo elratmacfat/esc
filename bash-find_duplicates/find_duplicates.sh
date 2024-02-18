@@ -1,17 +1,33 @@
 #!/bin/bash
+#
+# This script is work-in-progress (as of 2024/02/18)
+#
+# Finds duplicate files across multiple subdirectories. 
+#
+# The approached solution and the dimensions of its parameter are chosen for an image collection, which
+# has grown for years. Thousands of jpg-images have piled up and have been copied around in most chaotic 
+# ways.
+#
+# Duplicate files may exist under different names. Therefore the filename must not be considered when
+# searching for those.
+# The script starts off by reading only the first few bytes of each file. These bytes are used to 
+# generate a partial fingerprint. All files with the same partial fingerprint go into the same bucket.
+# This could potentially result in a lots of buckets, but since only a small chunk of each file is read, 
+# this should not too bad (run-time-wise).
+# In a next step, every bucket that contains more than one file possibly contains duplicates. For each of 
+# these pre-filtered files, the full fingerprint is generated. Files with the same full fingerprint go
+# into the same bucket. In the end those buckets are kept that contain more than one file.
+#
 
-# A white-space must not be interpreted as delimiting character,
-# because there could be files and directories containing spaces.
-# We're assuming here that there are no new-line characters
+# The default 'internal field separator' (IFS) yields space, tab and newline. The filenames this
+# script is going to deal with could possibly contain spaces. Concatenating multiple filenames
+# with spaces in between would therefore be errorprone.
 #
 IFS_backup=$IFS
 IFS_newline_only=$'\n'
 IFS=$IFS_newline_only
 
-# Associative array that is used to map each file to the MD5-checksum 
-# that's generated from the file's first 100 bytes.
-# Multiple files being mapped to the same checksum are considered 
-# possible duplicates.
+# Definition of associative arrays, that will be used to map filenames to MD5 checksums.
 #
 declare -A possible_duplicates
 declare -A actual_duplicates
@@ -88,4 +104,4 @@ do
 	do
 		echo "    $file"
 	done
-done
+	done
