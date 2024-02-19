@@ -37,7 +37,9 @@ declare -A full_fingerprints
 
 echo "=== stage 1 - taking partial fingerprints  ==="
 
-for file in $(find . -iname "*.txt" -or -iname "*.md")
+files=$(find . -iname "*.txt" -or -iname "*.md")
+
+for file in $files
 do
 	# The program 'md5sum' produces the 32 byte checksum plus additional output. The output
 	# is interpreted as the values of an indexed array. The spaces/tabs act as delimiter.
