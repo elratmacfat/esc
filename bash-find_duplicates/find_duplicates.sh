@@ -52,53 +52,50 @@ files=($(find . -iname "*.txt" -or -iname "*.md"))
 declare -A partial_fingerprints
 declare -A full_fingerprints
 
-echo "=== stage 1 - taking partial fingerprints  ==="
 
+i=0
+n=${#files[@]}
+
+printf "\ttaking partial fingerprints of $n files..."
 
 for file in ${files[@]}
 do
-	# The program 'md5sum' produces the 32 byte checksum plus additional output. The output
-	# is interpreted as the values of an indexed array. The spaces/tabs act as delimiter.
-	# That's why the default IFS value is restored.
-	#
-	# The variable 'checksum' is an array where the first element is the MD5 checksum.
-	# The first element of an array can be used without explicitly using the subscript [0].
-	# 
+	((++i))
+	p=$((100 * $i / $n))
+	printf "\r$p%%"
+
 	tmp=$(dd status=none if="${file}" bs=100 count=1 | md5sum)
 	checksum=${tmp:0:32}
 
 	partial_fingerprints[$checksum]+="${file}${IFS}"
 done
 
-# todo: Remove buckets with only one element here.
-#
+i=0
+n=${#partial_fingerprints[@]}
 
-echo "=== stage 2 - taking full fingerprints of possible duplicates ==="
+printf "\n\ttaking full fingerprints of $n possible duplicates"
 
 for key in "${!partial_fingerprints[@]}"
 do
+	((++i))
+	p=$((100 * $i / $n))
+	printf "\r$p%%"
+
 	number_of_possible_duplicates=$(field_count "${partial_fingerprints[$key]}")
 
-
-	# todo: Don't ask
 	if [[ $number_of_possible_duplicates -gt 1 ]]
 	then
-		#echo "$key: $number_of_possible_duplicates"
-		
 		for file in ${partial_fingerprints[$key]};
 		do
 			tmp=$(md5sum "$file")
 			checksum=${tmp:0:32}
-
-			echo "    $checksum : $file"
-
 
 			full_fingerprints[$checksum]+="${file}${IFS}"
 		done
 	fi
 done
 
-echo "=== stage 3 - removing false positives ==="
+printf "\n\tremoving false positives"
 
 for key in "${!full_fingerprints[@]}"
 do
@@ -106,12 +103,11 @@ do
 
 	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
-		print_files "${full_fingerprints[$key]}"
 		unset full_fingerprints[$key]
 	fi
 done
 
-echo "=== stage 4 ==="
+printf "\n\nResults\n-------\n"
 
 for key in "${!full_fingerprints[@]}"
 do
