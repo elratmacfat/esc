@@ -50,9 +50,8 @@ do
 	# The variable 'checksum' is an array where the first element is the MD5 checksum.
 	# The first element of an array can be used without explicitly using the subscript [0].
 	# 
-	IFS=$IFS_backup
-	checksum=($(dd status=none if="${file}" bs=100 count=1 | md5sum))
-	IFS=$IFS_newline_only
+	tmp=$(dd status=none if="${file}" bs=100 count=1 | md5sum)
+	checksum=${tmp:0:32}
 
 	# Put the file (or rather the filename) into the bucket that is identified by its partial
 	# fingerprint. Add delimiter only if the bucket already has items in it.
@@ -82,9 +81,8 @@ do
 		
 		for file in ${partial_fingerprints[$key]};
 		do
-			IFS=$IFS_backup
-			checksum=($(md5sum "$file"))
-			IFS=$IFS_newline_only
+			tmp=$(md5sum "$file")
+			checksum=${tmp:0:32}
 
 			echo "    $checksum : $file"
 
