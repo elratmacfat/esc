@@ -22,6 +22,16 @@
 #
 # ---------------------------------------------------------------------------------------------------------
 
+# Echo the number of fields in the string $1. Fields are separated by a newline (\n) and only
+# by a newline. IFS is required to exclude spaces.
+#
+function field_count () {
+	local n=0
+	for dummy in $1; do ((++n)); done
+	echo $n
+}
+
+
 # The default 'internal field separator' (IFS) yields space, tab and newline. The filenames this
 # script is going to deal with could possibly contain spaces. Concatenating multiple filenames
 # with spaces in between would therefore be errorprone.
@@ -61,9 +71,8 @@ echo "=== stage 2 - taking full fingerprints of possible duplicates ==="
 
 for key in "${!partial_fingerprints[@]}"
 do
-	# todo: There's got to be less nasty way...
-	number_of_possible_duplicates=0
-	for dummy in ${partial_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
+	number_of_possible_duplicates=$(field_count "${partial_fingerprints[$key]}")
+
 
 	# todo: Don't ask
 	if [[ $number_of_possible_duplicates -gt 1 ]]
@@ -87,8 +96,8 @@ echo "=== stage 3 - removing false positives ==="
 
 for key in "${!full_fingerprints[@]}"
 do
-	number_of_possible_duplicates=0
-	for dummy in ${full_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
+	number_of_possible_duplicates=$(field_count "${full_fingerprints[$key]}")
+
 	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
 		for file in ${full_fingerprints[$key]};
