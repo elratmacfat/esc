@@ -30,6 +30,9 @@ IFS_backup=$IFS
 IFS_newline_only=$'\n'
 IFS=$IFS_newline_only
 
+files=($(find . -iname "*.txt" -or -iname "*.md")) 
+
+
 # Definition of associative arrays, that will be used to map filenames to MD5 checksums.
 #
 declare -A partial_fingerprints
@@ -37,9 +40,8 @@ declare -A full_fingerprints
 
 echo "=== stage 1 - taking partial fingerprints  ==="
 
-files=$(find . -iname "*.txt" -or -iname "*.md")
 
-for file in $files
+for file in ${files[@]}
 do
 	# The program 'md5sum' produces the 32 byte checksum plus additional output. The output
 	# is interpreted as the values of an indexed array. The spaces/tabs act as delimiter.
