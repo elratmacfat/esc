@@ -26,9 +26,7 @@
 # script is going to deal with could possibly contain spaces. Concatenating multiple filenames
 # with spaces in between would therefore be errorprone.
 #
-IFS_backup=$IFS
-IFS_newline_only=$'\n'
-IFS=$IFS_newline_only
+IFS=$'\n'
 
 files=($(find . -iname "*.txt" -or -iname "*.md")) 
 
