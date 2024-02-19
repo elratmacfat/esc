@@ -31,6 +31,12 @@ function field_count () {
 	echo $n
 }
 
+function print_files() {
+	for f in $1; do
+		echo "    $f"
+	done
+}
+
 
 # The default 'internal field separator' (IFS) yields space, tab and newline. The filenames this
 # script is going to deal with could possibly contain spaces. Concatenating multiple filenames
@@ -100,10 +106,7 @@ do
 
 	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
-		for file in ${full_fingerprints[$key]};
-		do
-			echo "    $file"
-		done
+		print_files "${full_fingerprints[$key]}"
 		unset full_fingerprints[$key]
 	fi
 done
@@ -113,10 +116,7 @@ echo "=== stage 4 ==="
 for key in "${!full_fingerprints[@]}"
 do
 	echo $key
-	for file in ${full_fingerprints[$key]};
-	do
-		echo "    $file"
-	done
+	print_files "${full_fingerprints[$key]}"
 done
 
 
