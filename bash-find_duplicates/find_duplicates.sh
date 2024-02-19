@@ -51,14 +51,7 @@ do
 	tmp=$(dd status=none if="${file}" bs=100 count=1 | md5sum)
 	checksum=${tmp:0:32}
 
-	# Put the file (or rather the filename) into the bucket that is identified by its partial
-	# fingerprint. Add delimiter only if the bucket already has items in it.
-	#
-	unset delimiter
-	if [[ ${partial_fingerprints[$checksum]} ]]; then 
-		delimiter=${IFS};
-	fi
-	partial_fingerprints[$checksum]+="${delimiter}${file}"
+	partial_fingerprints[$checksum]+="${file}${IFS}"
 done
 
 # todo: Remove buckets with only one element here.
