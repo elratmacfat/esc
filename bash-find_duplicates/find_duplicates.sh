@@ -78,11 +78,7 @@ do
 			echo "    $checksum : $file"
 
 
-			unset delimiter
-			if [[ ${full_fingerprints[$checksum]} ]]; then 
-				delimiter=${IFS};
-			fi
-			full_fingerprints[$checksum]+="${delimiter}${file}"
+			full_fingerprints[$checksum]+="${file}${IFS}"
 		done
 	fi
 done
@@ -95,7 +91,10 @@ do
 	for dummy in ${full_fingerprints[$key]}; do ((++number_of_possible_duplicates)); done
 	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
-		echo "    ${full_fingerprints[$key]} is unique."
+		for file in ${full_fingerprints[$key]};
+		do
+			echo "    $file"
+		done
 		unset full_fingerprints[$key]
 	fi
 done
