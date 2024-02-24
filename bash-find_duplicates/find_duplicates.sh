@@ -131,7 +131,7 @@ declare -A full_fingerprints
 i=0
 n=${#files[@]}
 
-conditional_printf "\n\ttaking partial fingerprints of $n files..."
+conditional_printf "\n\ttaking partial fingerprints of files..."
 
 for file in ${files[@]}
 do
@@ -144,14 +144,17 @@ do
 	partial_fingerprints[$checksum]+="${file}${IFS}"
 done
 
+conditional_printf "\n\t$n"
+
 # ---------------------------------------------------------------------------------------------------------
 # Taking full fingerprints of possible duplicates 
 # ---------------------------------------------------------------------------------------------------------
 
+ctr=0
 i=0
 n=${#partial_fingerprints[@]}
 
-conditional_printf "\n\ttaking full fingerprints of $n possible duplicates"
+conditional_printf "\n\ttaking full fingerprints of possible duplicates"
 
 for key in "${!partial_fingerprints[@]}"
 do
@@ -168,12 +171,15 @@ do
 			checksum=${tmp:0:32}
 
 			full_fingerprints[$checksum]+="${file}${IFS}"
+			((++ctr))
 		done
 	fi
 done
+conditional_printf "\n\t$ctr"
 
 conditional_printf "\n\tremoving false positives"
 
+ctr=0
 i=0
 n=${#full_fingerprints[@]}
 
@@ -187,8 +193,11 @@ do
 	if [[ $number_of_possible_duplicates -eq 1 ]]
 	then
 		unset full_fingerprints[$key]
+		((++ctr))
 	fi
 done
+conditional_printf "\n\t$ctr"
+
 
 conditional_printf "\n\nResults\n-------\n"
 
