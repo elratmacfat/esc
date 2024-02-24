@@ -46,21 +46,22 @@ function field_count () {
 # let the user know that his input was invalid.
 #
 function print_usage_and_exit() {
+	echo ""
 	if [[ $1 ]]; then
 		echo "unrecognized parameter \"$1\""
 		echo ""
 	fi
-	echo "usage: $0 [option]* <filetype1[,filetype2]*>"
-	echo "  filetype:     Filetypes separated by a ',' e.g. jpg,jpeg,png"
+	echo "usage:     $0 [options] <filetypes>"
+	echo ""
+	echo "  filetypes:"
+	echo "    One or more filetypes separated by a ','"
 	echo "  options:"
 	echo "    --help      Prints this help message and exits."
-	echo "    --silent    Suppresses additional progress information."
-	echo "                Should be used when output is redirected"
-	echo "                into a file or pipe."
+	echo "    --silent    Suppresses additional progress information. Should be used when output is redirected into a file or pipe."
 	echo ""
-	echo "examples:"
-	echo "  $0 jpg,jpeg"
-	echo "  $0 --silent jpg > my_results"
+	echo "examples:  $0 jpg,jpeg"
+	echo "           $0 --silent jpg > my_results"
+	echo ""
 	exit
 }
 
