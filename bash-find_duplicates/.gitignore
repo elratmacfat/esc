@@ -1,2 +1,6 @@
-test
+# Ignore directories containing test data
+test*
+
+# Ignore all shell scripts that are not already tracked
+*.sh
 
