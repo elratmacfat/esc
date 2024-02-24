@@ -173,8 +173,14 @@ done
 
 conditional_printf "\n\tremoving false positives"
 
+i=0
+n=${#full_fingerprints[@]}
+
 for key in "${!full_fingerprints[@]}"
 do
+	((++i))
+	conditional_printf_progress $i $n
+
 	number_of_possible_duplicates=$(field_count "${full_fingerprints[$key]}")
 
 	if [[ $number_of_possible_duplicates -eq 1 ]]
