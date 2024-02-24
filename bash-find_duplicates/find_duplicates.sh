@@ -1,8 +1,15 @@
 #!/bin/bash
 #
-# This script is work-in-progress (as of 2024/02/18)
-#
 # Finds duplicate files across multiple subdirectories. 
+#
+# usage: 
+# 	./find_duplicates.sh [options]* <filetype1[,filetype2]*>
+#
+# examples: 
+# 	./find_duplicates --help
+# 	./find_duplicates txt
+# 	./find_duplicates --silent txt,md,doc
+# 	./find_duplicates jpg,jpeg
 #
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -22,6 +29,10 @@
 #
 # ---------------------------------------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------------------------------------
+# Function definitions
+# ---------------------------------------------------------------------------------------------------------
+
 # Echo the number of fields in the string $1. Fields are separated by a newline (\n) and only
 # by a newline. IFS is required to exclude spaces.
 #
@@ -31,12 +42,71 @@ function field_count () {
 	echo $n
 }
 
-function print_files() {
-	for f in $1; do
-		echo "    $f"
-	done
+# Print help message. Provide an unrecognized argument as first and only parameter to 
+# let the user know that his input was invalid.
+#
+function print_usage_and_exit() {
+	if [[ $1 ]]; then
+		echo "unrecognized parameter \"$1\""
+		echo ""
+	fi
+	echo "usage: $0 [option]* <filetype1[,filetype2]*>"
+	echo "  filetype:     Filetypes separated by a ',' e.g. jpg,jpeg,png"
+	echo "  options:"
+	echo "    --help      Prints this help message and exits."
+	echo "    --silent    Suppresses additional progress information."
+	echo "                Should be used when output is redirected"
+	echo "                into a file or pipe."
+	echo ""
+	echo "examples:"
+	echo "  $0 jpg,jpeg"
+	echo "  $0 --silent jpg > my_results"
+	exit
 }
 
+function conditional_printf() {
+	if [[ $silent -eq 0 ]]; then
+		printf "$1"
+	fi
+}
+
+function conditional_printf_progress() {
+	if [[ $silent -eq 0 ]]; then
+		p=$((100 * $1 / $2))
+		printf "\r$p%%"
+	fi
+}
+
+# ---------------------------------------------------------------------------------------------------------
+# Parsing arguments and creating file list
+# ---------------------------------------------------------------------------------------------------------
+
+silent=0
+
+if [[ $# -eq 0 ]]; then
+	print_usage_and_exit
+fi
+((i=1))
+for arg in "$@"; do
+	if [[ $arg = "--help" ]]; then print_usage_and_exit
+	elif [[ $i -eq $# ]]; then 
+		backup=$IFS
+		IFS=','
+		filetype=$arg
+		find_command="find . ";
+		((k=0))
+		for ext in $arg; do
+			if [[ k -gt 0 ]]; then or=" -or "; fi
+			find_command="${find_command}${or}-iname \"*.${ext}\""
+			((k++))
+		done
+		IFS=$backup
+
+	elif [[ $arg = "--silent" ]]; then silent=1
+	else print_usage_and_exit $arg
+	fi
+	((++i))
+done
 
 # The default 'internal field separator' (IFS) yields space, tab and newline. The filenames this
 # script is going to deal with could possibly contain spaces. Concatenating multiple filenames
@@ -44,8 +114,12 @@ function print_files() {
 #
 IFS=$'\n'
 
-files=($(find . -iname "*.txt" -or -iname "*.md")) 
+files=($(eval "$find_command"))
 
+
+# ---------------------------------------------------------------------------------------------------------
+# Taking partial fingerprints of all files
+# ---------------------------------------------------------------------------------------------------------
 
 # Definition of associative arrays, that will be used to map filenames to MD5 checksums.
 #
@@ -56,13 +130,12 @@ declare -A full_fingerprints
 i=0
 n=${#files[@]}
 
-printf "\ttaking partial fingerprints of $n files..."
+conditional_printf "\n\ttaking partial fingerprints of $n files..."
 
 for file in ${files[@]}
 do
 	((++i))
-	p=$((100 * $i / $n))
-	printf "\r$p%%"
+	conditional_printf_progress $i $n
 
 	tmp=$(dd status=none if="${file}" bs=100 count=1 | md5sum)
 	checksum=${tmp:0:32}
@@ -70,16 +143,19 @@ do
 	partial_fingerprints[$checksum]+="${file}${IFS}"
 done
 
+# ---------------------------------------------------------------------------------------------------------
+# Taking full fingerprints of possible duplicates 
+# ---------------------------------------------------------------------------------------------------------
+
 i=0
 n=${#partial_fingerprints[@]}
 
-printf "\n\ttaking full fingerprints of $n possible duplicates"
+conditional_printf "\n\ttaking full fingerprints of $n possible duplicates"
 
 for key in "${!partial_fingerprints[@]}"
 do
 	((++i))
-	p=$((100 * $i / $n))
-	printf "\r$p%%"
+	conditional_printf_progress $i $n
 
 	number_of_possible_duplicates=$(field_count "${partial_fingerprints[$key]}")
 
@@ -95,7 +171,7 @@ do
 	fi
 done
 
-printf "\n\tremoving false positives"
+conditional_printf "\n\tremoving false positives"
 
 for key in "${!full_fingerprints[@]}"
 do
@@ -107,12 +183,16 @@ do
 	fi
 done
 
-printf "\n\nResults\n-------\n"
+conditional_printf "\n\nResults\n-------\n"
 
 for key in "${!full_fingerprints[@]}"
 do
 	echo $key
-	print_files "${full_fingerprints[$key]}"
+	
+	for f in ${full_fingerprints[$key]}; do
+		echo "    $f"
+	done
+
 done
 
 
